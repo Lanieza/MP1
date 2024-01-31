@@ -4,25 +4,9 @@
 // iapil og token ang mga delimeters
 
 #include <iostream>
-#include <sstream>
+#include <sstream>  
 #include <vector>
 using namespace std; 
-
-// class SyntaxChecker{  
-//     private:
-//         bool status;
-//         string input;
-//         void check(){
-
-//         }
-//     public:
-//         SyntaxChecker(string str){
-//             input = str;
-//             check();
-//         }
-
-
-// }
 
 
 int getType(string str){
