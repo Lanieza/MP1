@@ -3,74 +3,131 @@
 // important to set up the staging of the state and the input type
 // iapil og token ang mga delimeters
 
+
+
 #include <iostream>
 #include <sstream>  
 #include <vector>
+#include <cctype> // Include for isalnum function
 using namespace std; 
 
 
-// int getType(string str){
-//     if(str == "int" || str == "char" || str == "double" || str == "float"){
-//         return 0; // for datatype;
-//     }
-//     else if(str == " "){
-//         return 1; //for space;
-//     }
-//     else if(isIdentifier(str))
-//         return 2;
-//     else if(str == ","){
-//         return 3; //for space;
-//     }
-//     else if(str == ";"){
-//         return 4; //for space;
-//     }else 
-//         return 5;
-    
+enum TokenType {
+    DATATYPE = 0,
+    SPACE = 1,
+    IDENTIFIER = 2,
+    COMMA = 3,
+    SEMICOLON = 4,
+    EQUAL_SIGN = 5,
+    UNEXPECTED = 6
+};
+
+
+bool isIdentifier(const std::string &str) {
+    if (!str.empty() && (str[0] == '_' || isalpha(str[0]))) {
+        for (char c : str.substr(1)) {
+            if (!isalnum(c) && c != '_') {
+                return false;
+            }
+        }
+        return true; // All characters were checked
+    }
+    return false;
+}
+
+
+
+int getType(string str){
+    if(str == "int" || str == "char" || str == "double" || str == "float"){
+        return DATATYPE; // for datatype;
+    }
+    else if(str == " " ){
+        return SPACE; //for space;
+    }
+    else if(isIdentifier(str))
+        return IDENTIFIER;
+    else if(str == ","){
+        return COMMA; //for comma
+    }
+    else if(str == ";"){
+        return SEMICOLON; //for semicolon
+    }else if(str == "="){ 
+        //i apil pa and make sure if naay equals kailangan int char ang assigned value maybe a function
+        return EQUAL_SIGN; //for equal sign
+    }else 
+        return UNEXPECTED; //for something that is unexpected
         
-// }
-
-// bool isIdentifier(string str){
-//     //should start with underscore or any of the letter uppercase or lowercase letters
-//     if(str[0] == '_' || str[0] >= 'A' && str[0] <= 'Z' && || str[0] >= 'a' && str[0] <= 'z' && ){
-//         for(int i=1 ; i<str.length(); i++){
-//             if (!(str[i] == '_' )|| (str[i] >= 'A' && str[i] <= 'Z') || (str[i] >= 'a' && str[i] <= 'z' ) || (str[i] >= '0' && str[i] <= '9' )){
-//                 return false;
-//             }
-//         }
-
-//         return true; //meaning all characters were checked
-//     }else
-//         return false;
-
-// }
+}
 
 
-// bool check_Variable(const vector<string>& tokens) { // bool jud ni siya dapat
-//     // I CANNOT MAKE THE STATE AS INDEX SINCE FOR SAMPLE
-//     //INT        X; THERE WOULD BE MANY BLANK SPACES PA BEFORE X 
-//     //SO UNYA RA MAG UPDATE OG STATE IF NANA KOS LETTERS EXCEPT SA MGA DELIMITERS
+bool check_Variable(const vector<string>& tokens) { // bool jud ni siya dapat
+    //update the states:
+    //stage 0 = 1 declaring funtion or 2 function declarations
+    //stage 1 = variable type 
+    //stage 2 = identifier
+    //stage 3 = 
+    //stage 4 =  check if theres a comma;
+
+
+    //1 int x,y; 
+    //  1 - stage 0
+    //  int - stage 1
+    // x - stage 2
+    // , - stage 2 but its a different type of identifier its a delimiter should expect a identifier
+    // y - stage 2
+    // ; - stage 3 end but will not automatically return since need to check if it also the end of the vector array.
+
+    int current_stage = 0, i=0;
     
-//     int state = 0, i=0;
-    
-//     for (auto it = tokens.begin(); it != tokens.end(); ++it){
-//         int inputType = getType(*it);
+    for (auto it = tokens.begin(); it != tokens.end(); ++it){
+        int inputType = getType(*it);
+        int prev_stage = current_stage;
+        //2 possible cases:
+        //if previos state is greater than the current state then something must be wrong
+        //except if na reach na niya ang stage 3 tapos balik siyag stage 1 for other declaration
+        
+            if (inputType == DATATYPE){
+                current_stage = 1;
+            }else if(inputType == SPACE){
+                
+            }else if(inputType == IDENTIFIER){
+                current_stage = 2;
+                
+            }else if(inputType == COMMA){
+                
+            }else if(inputType == SEMICOLON){
+                current_stage = 3;
+                
+            }else if(inputType == EQUAL_SIGN){
+                current_stage = 2;
+                
+            }else if(inputType == UNEXPECTED){
+            
+            }
 
-//         if(state == 0 )
-//     }
+            
+        
+        //cout<<*it<<" "<<"prev state: "<<prev_stage<<" current state: "<<current_stage<<endl;
+        
+        if(prev_stage > current_stage && prev_stage != 3){ 
+            //it is possible that in one line there will be multiple declarations
+            //so the state cannot go back to its previous state but it must be allowed when stage 3 is reached and then stage is reset to 1 for the declaration of other variable
+        
+            return false;
+        }
 
-//     cout<<endl;
+        
+        
+    }
+
+    if(current_stage == 3)
+        return true;
+    else
+        return false; //assume first that its not valid
 
 
-//     // if(state == 1) //meaning only the datype is the output
-//     //     return false;
-//     //another case is if naay comma dayon walay nisunod na variable
-//     //
-    
-//     return true;
-//     //if theres space mo continue 
-//     //if theres comma mo continue 
-//     //if theres ; then will stop
-// }
+
+}
 
 
 
@@ -102,15 +159,15 @@ void tokenize(const string& input, vector<string>& tokens, const string& delimit
 }
 
 int main() {
-    // int cases;
-    // cin >> cases;
+    int cases;
+    cin >> cases;
 
-    // while(cases--){
+    while(cases--){
         string inputString;
-        // int testType;
-        // cin >> testType;  // Read the type of the test case (1 or 2)
 
-        // cin.ignore();  // i cite nig apil sa honor code 
+        int testType;
+        cin >> testType;  // Read the type of the test case (1 or 2)
+        cin.ignore();  // i cite nig apil sa honor code 
 
         getline(cin, inputString);
         vector<string> tokens;
@@ -122,32 +179,28 @@ int main() {
         tokenize(inputString, tokens, delimiters);
 
         // Display the tokens and delimiters
-        cout << "Tokens: ";
-        for (const auto& token : tokens)
-            cout << "[" << token << "] ";
+        // cout << "Tokens: ";
+        // for (const auto& token : tokens)
+        //     cout << "[" << token << "] ";
 
-        cout<<endl;
+        // cout<<endl;
 
-        // if (testType == 1) {
-        //     // Handle variable declaration
-        //     // check_Variable(tokens);
-        //     if (check_Variable(tokens)) {
-        //         cout << "VALID VARIABLE DECLARATION" << endl;
-        //     } else {
-        //         cout << "INVALID VARIABLE DECLARATION" << endl;
-        //     }
 
-        // } 
-        //else if (testType == 2) {
-        //     // Handle function declaration
-        //     if (check_Function(tokens)) {
-        //         cout << "VALID FUNCTION DECLARATION" << endl;
-        //     } else {
-        //         cout << "INVALID FUNCTION DECLARATION" << endl;
-        //     }
-        // }
+        if(testType == 1){
+            if (check_Variable(tokens)) {
+                cout << "VALID VARIABLE DECLARATION" << endl;
+            } else {
+                cout << "INVALID VARIABLE DECLARATION" << endl;
+            }
+        }else if (testType == 2) {
+            // if (check_Function(tokens)) {
+            //     cout << "VALID FUNCTION DECLARATION" << endl;
+            // } else {
+            //     cout << "INVALID FUNCTION DECLARATION" << endl;
+            // }
+        }
 
-    // }
+    }
 
     return 0;
 }
