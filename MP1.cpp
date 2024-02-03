@@ -1,30 +1,51 @@
-// //cases include int which is declared as '9' 
-// //because the equivalent of this string in ascii is 57
-// important to set up the staging of the state and the input type
-// iapil og token ang mga delimeters
-
-
 
 #include <iostream>
-#include <sstream>  
+#include <sstream>
 #include <vector>
-#include <cctype> // Include for isalnum function
-using namespace std; 
+#include <cctype>
+using namespace std;
 
 
-enum TokenType {
-    DATATYPE = 0,
-    SPACE = 1,
-    IDENTIFIER = 2,
-    COMMA = 3,
-    SEMICOLON = 4,
-    EQUAL_SIGN = 5,
-    UNEXPECTED = 6
+enum State{ //for variable
+    STAGE_0 = 0,
+    STAGE_1 = 1, //check for datatype
+    STAGE_2 = 2, //check for variable name
+    STAGE_3 = 3, //if equal - check if it is an identifier, comma - go back to stage 2, or semicolon - go back to stage 1
 };
 
+enum TokenType {
+    START,      //0
+    DATATYPE,   //1
+    VARNAME,    //2
+    SPACE,      //3
+    COMMA,      //4
+    SEMICOLON,  //5
+    EQUAL_SIGN, //6
+    UNEXPECTED, //7
+};
+
+class Token {
+public:
+    string identifier; // for example int
+    TokenType token_type = START; // Specify the type for TokenType
+    State token_state = STAGE_1; //
+    
+};
+
+// bool isIdentifier(const std::string &str) {
+//     if (!str.empty() && (str[0] == '_' || isalpha(str[0]))) {
+//         for (char c : str.substr(1)) {
+//             if (!isalnum(c) && c != '_') {
+//                 return false;
+//             }
+//         }
+//         return true; // All characters were checked
+//     }
+//     return false;
+// }
 
 bool isIdentifier(const std::string &str) {
-    if (!str.empty() && (str[0] == '_' || isalpha(str[0]))) {
+    if (!str.empty() && (str[0] == '_' || isalnum(str[0]))) {
         for (char c : str.substr(1)) {
             if (!isalnum(c) && c != '_') {
                 return false;
@@ -36,100 +57,23 @@ bool isIdentifier(const std::string &str) {
 }
 
 
-
-int getType(string str){
-    if(str == "int" || str == "char" || str == "double" || str == "float"){
-        return DATATYPE; // for datatype;
-    }
-    else if(str == " " ){
-        return SPACE; //for space;
-    }
-    else if(isIdentifier(str))
-        return IDENTIFIER;
-    else if(str == ","){
-        return COMMA; //for comma
-    }
-    else if(str == ";"){
-        return SEMICOLON; //for semicolon
-    }else if(str == "="){ 
-        //i apil pa and make sure if naay equals kailangan int char ang assigned value maybe a function
-        return EQUAL_SIGN; //for equal sign
-    }else 
-        return UNEXPECTED; //for something that is unexpected
-        
-}
-
-
-bool check_Variable(const vector<string>& tokens) { // bool jud ni siya dapat
-    //update the states:
-    //stage 0 = 1 declaring funtion or 2 function declarations
-    //stage 1 = variable type 
-    //stage 2 = identifier
-    //stage 3 = 
-    //stage 4 =  check if theres a comma;
-
-
-    //1 int x,y; 
-    //  1 - stage 0
-    //  int - stage 1
-    // x - stage 2
-    // , - stage 2 but its a different type of identifier its a delimiter should expect a identifier
-    // y - stage 2
-    // ; - stage 3 end but will not automatically return since need to check if it also the end of the vector array.
-
-    int current_stage = 0, i=0;
+int getType(string str) {
+    if (str == "int" || str == "char" || str == "double" || str == "float") {
+        return DATATYPE;
+    } else if (isIdentifier(str))
+        return VARNAME;
+    else if (str == ",") {
+        return COMMA;
+    } else if (str == ";") {
+        return SEMICOLON;
+    } else if (str == "=") {
+        return EQUAL_SIGN; // check if it the var_init is ok and if it is ok then assign it to a var_init : means variable initialization
+    } else if(str == " "){
+        return SPACE;
+    }else
+        return UNEXPECTED; //CAN BE VAR.INIT
     
-    for (auto it = tokens.begin(); it != tokens.end(); ++it){
-        int inputType = getType(*it);
-        int prev_stage = current_stage;
-        //2 possible cases:
-        //if previos state is greater than the current state then something must be wrong
-        //except if na reach na niya ang stage 3 tapos balik siyag stage 1 for other declaration
-        
-            if (inputType == DATATYPE){
-                current_stage = 1;
-            }else if(inputType == SPACE){
-                
-            }else if(inputType == IDENTIFIER){
-                current_stage = 2;
-                
-            }else if(inputType == COMMA){
-                
-            }else if(inputType == SEMICOLON){
-                current_stage = 3;
-                
-            }else if(inputType == EQUAL_SIGN){
-                current_stage = 2;
-                
-            }else if(inputType == UNEXPECTED){
-            
-            }
-
-            
-        
-        //cout<<*it<<" "<<"prev state: "<<prev_stage<<" current state: "<<current_stage<<endl;
-        
-        if(prev_stage > current_stage && prev_stage != 3){ 
-            //it is possible that in one line there will be multiple declarations
-            //so the state cannot go back to its previous state but it must be allowed when stage 3 is reached and then stage is reset to 1 for the declaration of other variable
-        
-            return false;
-        }
-
-        
-        
-    }
-
-    if(current_stage == 3)
-        return true;
-    else
-        return false; //assume first that its not valid
-
-
-
 }
-
-
 
 void tokenize(const string& input, vector<string>& tokens, const string& delimiters) {
     size_t start = 0;
@@ -146,8 +90,13 @@ void tokenize(const string& input, vector<string>& tokens, const string& delimit
         string delimiter = input.substr(end, 1);
         tokens.push_back(delimiter);
 
-        // Move to the next token
+        // Move to the next token (skip delimiters)
         start = end + 1;
+        while (start < input.length() && delimiters.find(input[start]) != string::npos) {
+            start++;
+        }
+
+        // Find the next delimiter
         end = input.find_first_of(delimiters, start);
     }
 
@@ -158,48 +107,151 @@ void tokenize(const string& input, vector<string>& tokens, const string& delimit
     }
 }
 
+
+bool check_Variable(const vector<string>& parsed_string, vector<Token>& tokens) {
+    
+    Token t;
+    
+    //pushed the identifier first 
+    for (const auto& identifier : parsed_string) {
+        t.identifier = identifier;
+        // t.token_type = DATATYPE; not yet here since we want to have a switch case to get it type each
+        tokens.push_back(t);
+    }
+    
+    //then pushed the tokentype 
+    for (auto& token : tokens) { 
+        int inputType = getType(token.identifier);
+        token.token_type = static_cast<TokenType>(inputType);
+        
+        // cout << token.identifier << " , " << token.token_type << endl;
+        
+    }
+    
+    //for debugging purposes:
+    
+    for (auto& token : tokens) { 
+        switch (token.token_type) {
+            case DATATYPE:
+                cout << "DATATYPE: " << token.identifier << endl;
+                break;
+            case VARNAME:
+                cout << "VARNAME: " << token.identifier << endl;
+                break;
+            case SPACE:
+                cout << "SPACE: " << token.identifier << endl;
+                break;
+            case COMMA:
+                cout << "COMMA: " << token.identifier << endl;
+                break;
+            case SEMICOLON:
+                cout << "SEMICOLON: " << token.identifier << endl;
+                break;
+            case EQUAL_SIGN:
+                cout << "EQUAL_SIGN: " << token.identifier << endl;
+                break;
+            case UNEXPECTED:
+                cout << "UNEXPECTED: " << token.identifier << endl;
+                break;
+            default:
+                break;
+        }
+    }
+    
+    State currentState = STAGE_1;
+
+    for (auto& token : tokens) { 
+
+            if(token.token_type == SPACE){
+                //do nothing
+                //cout<<"hello"<<endl;
+            }if(currentState == STAGE_3){
+                currentState = STAGE_1;
+            }else if(currentState == STAGE_1 && token.token_type == DATATYPE){
+                //cout<<"hello"<<endl;
+                currentState = STAGE_1;
+            }else if(currentState == STAGE_1 && token.token_type == VARNAME){
+                //cout<<"hello"<<endl;
+                currentState = STAGE_2;
+            }else if(currentState == STAGE_2 && token.token_type == COMMA){
+                currentState = STAGE_1;
+            }else if(currentState == STAGE_2 && token.token_type == SEMICOLON){
+                currentState = STAGE_3;
+            }else if(currentState == STAGE_2 && token.token_type == EQUAL_SIGN){
+                //2 cases that are valid: 
+                //1. value assigned is a declared variable
+                //2. value assigned is related to the datatype
+                currentState = STAGE_0; //means we have to check first if the initialize valus is valid
+        
+            }
+            else if(currentState == STAGE_0 && token.token_type == VARNAME || token.token_type == UNEXPECTED){
+                
+
+            }
+    }
+
+    cout<<"state: "<<currentState<<endl;
+
+    // Check if the last state is STAGE_3
+    return currentState == STAGE_3;
+    
+    
+}
+
+
 int main() {
     int cases;
     cin >> cases;
 
-    while(cases--){
+    while (cases--) {
         string inputString;
 
         int testType;
-        cin >> testType;  // Read the type of the test case (1 or 2)
-        cin.ignore();  // i cite nig apil sa honor code 
+        cin >> testType;
+        cin.ignore();
 
         getline(cin, inputString);
-        vector<string> tokens;
+        vector<string> parsed_string;
 
-        // Define a set of delimiters (slashes and dots in this example)
-        string delimiters = ",; ";
+        // Define a set of delimiters
+        string delimiters = ",; =";
 
         // Tokenize the string using the custom function
-        tokenize(inputString, tokens, delimiters);
+        tokenize(inputString, parsed_string, delimiters);
 
         // Display the tokens and delimiters
-        // cout << "Tokens: ";
-        // for (const auto& token : tokens)
-        //     cout << "[" << token << "] ";
+        cout << "parsed string: ";
+        for (const auto& individual_string : parsed_string)
+            cout << "[" << individual_string << "] ";
 
-        // cout<<endl;
+        cout << endl;
 
+        vector<Token> tokens;
+        
+        //ASSEMBLIN THE TOKENS WITH IDENTIFIER AND TOKENTYPE
+        
+        // for (const auto& identifier : parsed_string) {
+        //     Token t;
+        //     t.identifier = identifier;
+        //     t.token_type = DATATYPE;
+        //     Tokens.push_back(t);
+        // }
+        
+        
+        // // Print the identifiers and their token types
+        // cout << "Identifiers and Token Types:" << endl;
+        // for (const auto& token : tokens) {
+        //     cout << "Identifier: " << token.identifier << "     , TokenType: " << token.token_type << endl;
+        // }
+        
 
-        if(testType == 1){
-            if (check_Variable(tokens)) {
+        if (testType == 1) {
+            if (check_Variable(parsed_string, tokens)) {
                 cout << "VALID VARIABLE DECLARATION" << endl;
             } else {
                 cout << "INVALID VARIABLE DECLARATION" << endl;
             }
-        }else if (testType == 2) {
-            // if (check_Function(tokens)) {
-            //     cout << "VALID FUNCTION DECLARATION" << endl;
-            // } else {
-            //     cout << "INVALID FUNCTION DECLARATION" << endl;
-            // }
         }
-
     }
 
     return 0;
