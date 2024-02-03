@@ -204,7 +204,9 @@ bool check_Variable(const vector<string>& parsed_string, vector<Token>& tokens) 
     }
     
     State currentState = STAGE_1;
+    State previousState;
     string datatype;
+    Token prevToken;
 
     for (auto& token : tokens) { 
 
@@ -233,19 +235,18 @@ bool check_Variable(const vector<string>& parsed_string, vector<Token>& tokens) 
         
             }else if(currentState == STAGE_0 && token.token_type == VARNAME || token.token_type == UNEXPECTED){
                 
-                if(token.token_type == VARNAME){
+
+                    // cout<<token.identifier<<endl;
 
                     for (auto& t : tokens) {
-                        //checking if its declared
-                        if(token.token_type  == t.token_type && token.identifier == t.identifier){
-                            currentState = STAGE_2;
-                        }else 
-                            break;
+                            //checking if its declared
+                            if(token.identifier == t.identifier){
+                                currentState = STAGE_2;
+                                break;
+                            }
                     }
-                
-                }else if(token.token_type == UNEXPECTED){
-                    
 
+                if(currentState != STAGE_2){
                     if(datatype == "int"){
                         if(isvalid_int(token.identifier)){
                             currentState = STAGE_2; 
@@ -262,12 +263,23 @@ bool check_Variable(const vector<string>& parsed_string, vector<Token>& tokens) 
                         else 
                             return false;
                 }
-
+                
+            }else if(token.token_type == UNEXPECTED){
+                return false;
+            }else if(currentState != STAGE_3 && token.token_type == DATATYPE){
+                return false;
             }
+
+            cout<<token.identifier<<"   STATE: "<<currentState<<endl;
+
+
+            // Update prevToken for the next iteration
+            prevToken = token;
+            previousState = currentState;
 
         }
 
-    cout<<"STATE: "<<currentState<<endl;
+    cout<<"FINAL STATE: "<<currentState<<endl;
 
     // Check if the last state is STAGE_3
     return currentState == STAGE_3;
