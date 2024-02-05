@@ -1,6 +1,4 @@
-//so take note that the int can be a number or single character char if and only if maconvert siya sa ascii
-//so the char can be a number from 0 to 255 and then a single character char na ma qoute
-//ang double or float kay any number basta usa ra kabuok ang dot
+
 
 #include <iostream>
 #include <sstream>
@@ -193,28 +191,35 @@ bool check_Variable(const vector<string>& parsed_string, vector<Token>& tokens) 
     for (auto& token : tokens) { 
         int inputType = getType(token.identifier);
         token.token_type = static_cast<TokenType>(inputType);
-        
+    
+    
+        // Check for double declaration, considering the previous token
         if (token.token_type == VARNAME) {
-            // Check for double declaration
-            if (declaredVariables.find(token.identifier) != declaredVariables.end()) {
-                // cout << "Double declaration of variable: " << token.identifier << endl;
-                return false;
+            if (prevToken.token_type != EQUAL_SIGN && declaredVariables.find(token.identifier) != declaredVariables.end()) {
+                // Double declaration without an equal sign, return false
+                    return false;
+                // return false;
             }
-
-            // Add the variable to the set of declared variables
-            declaredVariables.insert(token.identifier);
+    
+            // Add the variable to the set of declared variables along with the previous element
+            declaredVariables.insert({ token.identifier, prevToken.identifier });
         }
         
-        // cout << token.identifier << " , " << token.token_type << endl;
+        // Add the following code after your main loop
+
+        // Print the contents of declaredVariables
+        // Print the contents of declaredVariables
+
+
+        prevToken = token;
+
+
         
     }
     
     
     // Initialize the set to keep track of seen identifiers
     unordered_set<string> seenIdentifiers;
-    
-    
-
     State currentState = STAGE_1;
     State previousState;
     string datatype;
@@ -293,7 +298,11 @@ bool check_Variable(const vector<string>& parsed_string, vector<Token>& tokens) 
             currentState = STAGE_3;
         else if (previousState == STAGE_4 && token.token_type == COMMA)
             currentState = STAGE_1;
+        else if(previousState == STAGE_4 && token.token_type == EQUAL_SIGN)
+            currentState = STAGE_0;
         else if(currentState == STAGE_4 && token.token_type != SPACE)
+            return false;
+        else if(previousState == STAGE_1 && token.token_type == SEMICOLON)
             return false;
           
 
