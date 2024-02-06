@@ -1,4 +1,4 @@
-
+//this is the 9/10 
 
 #include <iostream>
 #include <sstream>
@@ -26,7 +26,9 @@ enum TokenType {
     SEMICOLON,  //5
     EQUAL_SIGN, //6
     UNEXPECTED, //7
-    // VARINIT,    //8
+    LEFT_PAREN, // 8
+    RIGHT_PAREN, // 9
+
 };
 
 
@@ -77,7 +79,7 @@ bool isvalid_char(const std::string &str) {
 
     if (str.size() == 3 && str[0] == '\'' && str[2] == '\'') {
         return true; //means it is a single character
-        cout<<"here"<<endl;
+        // cout<<"here"<<endl;
     } else {
         try {
             size_t pos;
@@ -117,7 +119,7 @@ bool isIdentifier(const std::string &str) {
 
 
 int getType(string str) {
-    if (str == "int" || str == "char" || str == "double" || str == "float") {
+    if (str == "int" || str == "char" || str == "double" || str == "float" || str == "void") {
         return DATATYPE;
     } else if (isIdentifier(str))
         return VARNAME;
@@ -129,8 +131,13 @@ int getType(string str) {
         return EQUAL_SIGN; // check if it the var_init is ok and if it is ok then assign it to a var_init : means variable initialization
     } else if(str == " "){
         return SPACE;
+    }else if(str == "("){
+        return LEFT_PAREN;
+    }else if(str == ")"){
+        return RIGHT_PAREN;
     }else
         return UNEXPECTED; //CAN BE VAR.INIT
+
     
 }
 
@@ -175,58 +182,68 @@ bool areMatchingElementsUnique(const vector<pair<string, string>>& matchingEleme
 
 bool check_Variable(const vector<string>& parsed_string, vector<Token>& tokens) {
     
-    
     Token t;
     unordered_set<string> declaredVariables;
     Token prevToken;
-      // Initialize the set to keep track of seen identifiers
-    unordered_set<string> seenIdentifiers;
-    State currentState = STAGE_1;
-    State previousState;
-    string datatype;
     
     
     // pushed the identifier first 
     for (const auto& identifier : parsed_string) {
-        t.identifier = identifier;
-        // t.token_type = DATATYPE; not yet here since we want to have a switch case to get it type each
-        tokens.push_back(t);
+        
+        if(identifier != " "){ //ignoring white spaces
+            t.identifier = identifier;
+            // t.token_type = DATATYPE; not yet here since we want to have a switch case to get it type each
+            tokens.push_back(t);
+        }
     }
-    
+        
     //then pushed the tokentype 
     for (auto& token : tokens) { 
         int inputType = getType(token.identifier);
         token.token_type = static_cast<TokenType>(inputType);
-    
-    
-        // Check for double declaration, considering the previous token
-        if (token.token_type == VARNAME) {
-            if (prevToken.token_type != EQUAL_SIGN && declaredVariables.find(token.identifier) != declaredVariables.end()) {
-                cout<<prevToken.token_type<<prevToken.identifier<<endl;
-                
-                cout<<"oh diba"<<endl;
-                // Double declaration without an equal sign, return false
-                return false;
-            }
-    
-            // Add the variable to the set of declared variables along with the previous element
-            declaredVariables.insert({ token.identifier, prevToken.identifier });
-        }
-
-        prevToken = token;
-
-
         
+        // cout<<token.identifier<<" "<<token.token_type<<endl;
+        
+            // Check for double declaration, considering the previous token
+            if (token.token_type == VARNAME) {
+                
+                if (prevToken.token_type != EQUAL_SIGN && declaredVariables.find(token.identifier) != declaredVariables.end()) {
+                    // cout<<"hello"<<" "<<token.identifier<<endl;
+                    // Double declaration without an equal sign, return false
+                    if(prevToken.token_type != SPACE){
+                        // cout<<"hoyyyyyyy"<<token.identifier<<endl;
+                        return false;
+                    }
+                }
+        
+                // // Add the variable to the set of declared variables along with the previous element
+                declaredVariables.insert({ token.identifier, prevToken.identifier });
+            }
+            
+        prevToken = token;
     }
     
-
+    
+    // Initialize the set to keep track of seen identifiers
+    unordered_set<string> seenIdentifiers;
+    State currentState = STAGE_1;
+    State previousState;
+    string datatype;
 
     for (auto& token : tokens) {
-        cout<<token.identifier<<":  "<<currentState<<endl;
-        
-        if (seenIdentifiers.find(token.identifier) != seenIdentifiers.end()) {
-            // Identifier is repeated, return false
-            return false;
+        //i added here****************************************************
+        if ((prevToken.token_type != EQUAL_SIGN) && seenIdentifiers.find(token.identifier) != seenIdentifiers.end()) {
+            // cout<<"herepo"<<endl;
+            
+            // if(prevToken.identifier == " "){
+                
+            // }else{
+                // cout<<"prev: "<<prevToken.identifier<<endl;
+                // Identifier is repeated, return false
+                return false;
+                
+            // }
+            
         }
         
         if (token.token_type == SPACE) {
@@ -249,15 +266,7 @@ bool check_Variable(const vector<string>& parsed_string, vector<Token>& tokens) 
         } else if (currentState == STAGE_0 && (token.token_type == VARNAME || token.token_type == UNEXPECTED)) {
             //ang mosulod diri na test case is the initialization of variable
             //so token.identifier likely previous stage is = or space
-            
-            //check if it is a declared variable
-            for (auto& token : tokens) { 
-                // Check for double declaration
-                    if (declaredVariables.find(token.identifier) != declaredVariables.end()) {
-                        currentState = STAGE_4;;
-                    }
-            }
-
+            // cout<<"here1"<<endl;
             int count = 0;
             for (auto& t : tokens) {
 
@@ -297,8 +306,10 @@ bool check_Variable(const vector<string>& parsed_string, vector<Token>& tokens) 
 
             seenIdentifiers.insert(token.identifier); // Add the identifier to the set
 
-        }else if (token.token_type == UNEXPECTED)
+        }else if (token.token_type == UNEXPECTED){
+            // cout<<"here2"<<endl;
             return false;
+        }
         else if (currentState != STAGE_3 && token.token_type == DATATYPE)
             return false;
         else if (previousState == STAGE_4 && token.token_type == SEMICOLON)
@@ -307,21 +318,119 @@ bool check_Variable(const vector<string>& parsed_string, vector<Token>& tokens) 
             currentState = STAGE_1;
         else if(previousState == STAGE_4 && token.token_type == EQUAL_SIGN)
             currentState = STAGE_0;
-        else if(currentState == STAGE_4 && token.token_type != SPACE){
-            // cout<<"hello"<<endl;
+        else if(currentState == STAGE_4 && token.token_type != SPACE)
             return false;
-        }
         else if(previousState == STAGE_1 && token.token_type == SEMICOLON)
             return false;
         
-
+        
         // Update prevToken for the next iteration
-        prevToken = token;
+        if(prevToken.token_type != SPACE){
+            prevToken = token;
+        }
+        
         previousState = currentState;
     }
 
     // Check if the last state is STAGE_3
     return currentState == STAGE_3;
+}
+
+
+
+//************************************************************************************************
+//----------------------------------------------------------------
+
+
+bool check_Function(const vector<string>& parsed_string, vector<Token>& tokens){
+        
+    Token t;
+    unordered_set<string> declaredVariables;
+    Token prevToken;
+    
+    
+    // pushed the identifier first 
+    for (const auto& identifier : parsed_string) {
+        
+        if(identifier != " "){ //ignoring white spaces
+            t.identifier = identifier;
+            // t.token_type = DATATYPE; not yet here since we want to have a switch case to get it type each
+            tokens.push_back(t);
+        }
+    }
+
+    // for (auto& token : tokens) {
+    //     cout<<token.identifier<<endl;
+    // }
+        
+    //then pushed the tokentype 
+    for (auto& token : tokens) { 
+        int inputType = getType(token.identifier);
+        token.token_type = static_cast<TokenType>(inputType);
+        
+        // cout<<token.identifier<<" "<<token.token_type<<endl;
+    }
+    
+    
+    // Initialize the set to keep track of seen identifiers
+    // unordered_set<string> seenIdentifiers;
+    State currentState = STAGE_0;
+    State previousState;
+    string datatype;
+
+
+    //take note that the varname here means a function name or a varname that is within the paren
+    for (auto& token : tokens){
+
+        if(currentState == STAGE_0 && token.token_type == VARNAME){
+            // cout<<"hello"<<endl;
+            return false;
+        }else if(currentState == STAGE_0 && token.token_type == DATATYPE){
+            // cout<<"hi"<<endl;
+            currentState = STAGE_1;
+        }else if(currentState == STAGE_1 && token.token_type == VARNAME){
+            currentState = STAGE_2;
+        }else if(currentState == STAGE_1 && token.token_type == SEMICOLON){
+            return false;
+        }else if (currentState == STAGE_2 && token.token_type == LEFT_PAREN){
+            currentState = STAGE_3;
+        }else if(currentState == STAGE_3 && token.token_type == DATATYPE){
+            currentState = STAGE_2;
+        }else if(currentState == STAGE_2 && token.token_type == COMMA){
+            currentState = STAGE_3;
+        }else if(currentState == STAGE_2 && token.token_type == VARNAME){
+            cout<<"diria"<<endl;
+            currentState = STAGE_2;
+        }else if(currentState == STAGE_2 && token.token_type == RIGHT_PAREN){
+            currentState = STAGE_3;
+        }else if(currentState == STAGE_3 && token.token_type == SEMICOLON && prevToken.token_type == RIGHT_PAREN){
+            currentState = STAGE_4;
+        }else if(currentState == STAGE_2 && token.token_type == DATATYPE && (prevToken.token_type != LEFT_PAREN || prevToken.token_type != COMMA)){
+            return false;//================================================================
+        }else if(currentState == STAGE_3 && token.token_type == COMMA){
+            currentState = STAGE_1;
+        }
+
+        if(prevToken.token_type != SPACE){
+            prevToken = token;
+        }
+        
+        previousState = currentState;
+        
+        // else if(currentState == STAGE_2 && token.token_type == VA)
+        // cout<<endl;
+
+        cout<<token.identifier<<"  :"<<"state: "<<currentState<<endl;
+
+    
+    }
+
+    if(currentState == STAGE_4){
+        return true;
+    }else 
+        return false;
+
+
 }
 
 
@@ -341,17 +450,17 @@ int main() {
         vector<string> parsed_string;
 
         // Define a set of delimiters
-        string delimiters = ",;= ";
+        string delimiters = ",;= ()";
 
         // Tokenize the string using the custom function
         tokenize(inputString, parsed_string, delimiters);
 
         // Display the tokens and delimiters
-        cout << "parsed string: ";
-        for (const auto& individual_string : parsed_string)
-            cout << "[" << individual_string << "] ";
+        // cout << "parsed string: ";
+        // for (const auto& individual_string : parsed_string)
+        //     cout << "[" << individual_string << "] ";
 
-        cout << endl;
+        // cout << endl;
 
         vector<Token> tokens;
         
@@ -362,7 +471,14 @@ int main() {
             } else {
                 cout << "INVALID VARIABLE DECLARATION" << endl;
             }
+        } else{
+            if (check_Function(parsed_string, tokens)) {
+                cout << "VALID FUNCTION DECLARATION" << endl;
+            } else {
+                cout << "INVALID FUNCTION DECLARATION" << endl;
+            }
         }
+        
     }
 
     return 0;
